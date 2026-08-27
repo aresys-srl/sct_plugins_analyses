@@ -1,0 +1,113 @@
+[project]
+name = "sct_interferometric_analysis"
+description = "SCT Plugin for Interferometric Analysis of L1 SAR Products."
+authors = [{ name = "Aresys S.R.L.", email = "info@aresys.it" }]
+requires-python = ">=3.11"
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+dependencies = [
+    "numpy>2",
+    "netCDF4",
+    "jsonschema",
+    "typer>=0.24.1",
+    "perseo-core>=1.0.0",
+    "perseo-quality>=1.1.0",
+    "sct",
+]
+dynamic = ["version"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/aresys-srl/sct_plugins_analyses"
+Repository = "https://github.com/aresys-srl/sct_plugins_analyses"
+Documentation = "https://opensource.aresys.it/sct_plugins_analyses"
+
+[project.optional-dependencies]
+dev = ["ruff", "pylint"]
+test = ["pytest", "pytest-cov", "pytest-mock", "sct[graphs]>=3.1.0"]
+docs = ["zensical", "mkdocstrings-python"]
+
+[project.entry-points."sct.analyses"]
+interferometry = "sct_interferometric_analysis.interface:InterferometricAnalysisPlugin"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/sct_interferometric_analysis/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src", "tests"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+    "--cov=sct_interferometric_analysis",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--no-cov-on-fail",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
+fail_under = 70
+
+[tool.pylint.master]
+fail-under = 8
+fail-on = ["unused-import"]
+
+[tool.pylint.message_control]
+disable = ["import-error", "logging-fstring-interpolation", "logging-not-lazy"]
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.resolution]
+respect-source-order = true
+
+[tool.pdm.scripts]
+format_check = "ruff format --check"
+format = "ruff format"
+sort = "ruff check --select I --fix-only"
+lint_check = "ruff check"
+lint_fix = "ruff check --show-fixes --fix-only"
+test = "python -m pytest ./tests -v"
+check_code = { composite = ["format_check", "lint_check"] }
+fix_format = { composite = ["format", "sort", "lint_fix"] }
