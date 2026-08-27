@@ -1,0 +1,212 @@
+name: sct-radiometric-analysis
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+    tags:
+      - "sct-radiometric-analysis-v*"
+    paths:
+      - ".github/workflows/radiometry.yml"
+      - "sct_radiometric_analysis/**"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/radiometry.yml"
+      - "sct_radiometric_analysis/**"
+
+jobs:
+  ruff:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/pypa/manylinux_2_28_x86_64
+
+    defaults:
+      run:
+        working-directory: sct_radiometric_analysis
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - run: echo "/opt/python/cp312-cp312/bin" >> $GITHUB_PATH
+      - run: python --version
+      - run: python -m pip install ruff
+      - run: python -m ruff --version
+      - run: python -m ruff format --check .
+      - run: python -m ruff check .
+
+  pylint:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/pypa/manylinux_2_28_x86_64
+
+    defaults:
+      run:
+        working-directory: sct_radiometric_analysis
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - run: echo "/opt/python/cp312-cp312/bin" >> $GITHUB_PATH
+      - run: python --version
+      - run: python -m pip install pylint
+      - run: python -m pylint --version
+      - run: python -m pylint ./src/sct_radiometric_analysis
+
+  unittest_linux:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/pypa/manylinux_2_28_x86_64
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+
+    defaults:
+      run:
+        working-directory: sct_radiometric_analysis
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Select Python ${{ matrix.python }}
+        run: |
+          case "${{ matrix.python }}" in
+            3.11) echo "/opt/python/cp311-cp311/bin" >> $GITHUB_PATH ;;
+            3.12) echo "/opt/python/cp312-cp312/bin" >> $GITHUB_PATH ;;
+            3.13) echo "/opt/python/cp313-cp313/bin" >> $GITHUB_PATH ;;
+            3.14) echo "/opt/python/cp314-cp314/bin" >> $GITHUB_PATH ;;
+          esac
+
+      - run: python --version
+      - name: Install package
+        run: python -m pip install -e ".[test,graphs]"
+
+      - name: Run unit tests with coverage
+        run: |
+          mkdir -p _build
+          python -m pytest ./tests/ \
+            --junitxml=_build/pytest-report-linux-py${{ matrix.python }}.xml \
+            --cov-report=xml:_build/pytest-coverage-linux-py${{ matrix.python }}.xml
+
+      - name: Upload junit and coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-test-${{ matrix.python }}
+          path: |
+            sct_radiometric_analysis/_build/pytest-report-*.xml
+            sct_radiometric_analysis/_build/pytest-coverage-*.xml
+          retention-days: 14
+
+  unittest_windows:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+
+    defaults:
+      run:
+        working-directory: sct_radiometric_analysis
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+
+      - run: python --version
+      - name: Install package
+        run: python -m pip install -e ".[test]"
+
+      - name: Run unit tests with coverage
+        run: |
+          if (-not (Test-Path _build)) { New-Item -ItemType Directory -Path _build | Out-Null }
+          python -m pytest ./tests/ --junitxml=_build/pytest-report-win-py${{ matrix.python }}.xml --cov-report=xml:_build/pytest-coverage-win-py${{ matrix.python }}.xml
+
+      - name: Upload junit and coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-test-${{ matrix.python }}
+          path: |
+            sct_radiometric_analysis/_build/pytest-report-*.xml
+            sct_radiometric_analysis/_build/pytest-coverage-*.xml
+          retention-days: 14
+
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/pypa/manylinux_2_28_x86_64
+
+    defaults:
+      run:
+        working-directory: sct_radiometric_analysis
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - run: echo "/opt/python/cp312-cp312/bin" >> $GITHUB_PATH
+      - run: uv build --sdist --wheel .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: sct_radiometric_analysis/dist/
+          retention-days: 14
+
+  publish:
+    needs: [ruff, pylint, unittest_linux, unittest_windows, build]
+    if: startsWith(github.ref_name, 'sct-radiometric-analysis-v')
+
+    runs-on: ubuntu-latest
+
+    environment: pypi-sct-rad-plugin
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download wheels and sdist
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Clean dist
+        run: |
+          find dist -type f ! -name "*.whl" ! -name "*.tar.gz" -delete
+
+      - name: Show artifacts
+        run: |
+          find dist -type f -maxdepth 2
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
