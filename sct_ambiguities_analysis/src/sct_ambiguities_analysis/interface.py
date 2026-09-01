@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
 
-from sct import __version__
+from sct_ambiguities_analysis import __version__
 
 if TYPE_CHECKING:
     from sct.core.base import AnalysisHandler
