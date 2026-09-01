@@ -9,10 +9,10 @@ dependencies = [
     "numpy>2",
     "netCDF4",
     "jsonschema",
-    "typer>=0.24.1",
+    "typer>=0.27.2",
     "perseo-core>=1.0.0",
     "perseo-quality>=1.1.0",
-    "sct",
+    "sct>=3.2.1",
 ]
 dynamic = ["version"]
 classifiers = [
@@ -41,7 +41,7 @@ Documentation = "https://opensource.aresys.it/sct_plugins_analyses"
 
 [project.optional-dependencies]
 dev = ["ruff", "pylint"]
-test = ["pytest", "pytest-cov", "pytest-mock", "sct[graphs]>=3.1.0"]
+test = ["pytest", "pytest-cov", "pytest-mock", "sct[graphs]>=3.2.1"]
 docs = ["zensical", "mkdocstrings-python"]
 
 [project.entry-points."sct.analyses"]
