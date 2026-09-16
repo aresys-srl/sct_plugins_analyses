@@ -48,7 +48,7 @@ config = SCTRadiometricAnalysisConfig()  # this is the default, but parameters c
 
 output_netcdf_file, output_kpi_file = full_average_elevation_profiles_analysis(
     product=Path("path/to/product"),
-    output_radiometric_quantity=SARRadiometricQuantity.GAMMA,
+    output_radiometric_quantity=SARRadiometricQuantity.GAMMA_NOUGHT,
     output_directory=Path("path/to/output_directory"),
     config=config,  # optional, can be None
     graphs=True,  # optional, can be False
