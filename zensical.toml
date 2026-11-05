@@ -30,7 +30,7 @@ Copyright &copy; 2026-present Aresys s.r.l.
 # ]
 
 # Read more: https://zensical.org/docs/customization/#additional-css
-extra_css = ["stylesheets/extra.css"]
+extra_css = ["stylesheets/extras.css"]
 # Read more: https://zensical.org/docs/customization/#additional-javascript
 #extra_javascript = ["javascripts/extra.js"]
 
@@ -246,6 +246,11 @@ members_order = "source"
 # ----------------------------------------------------------------------------
 # The "extra" section contains miscellaneous settings.
 # ----------------------------------------------------------------------------
+[project.extra]
+# Link back to the Aresys Open Source landing page, shown in the header.
+open_source_url = "https://opensource.aresys.it/"
+open_source_label = "Aresys Open Source"
+
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
 link = "https://github.com/aresys-srl"
